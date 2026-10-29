@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Directionate</title>
+<style>
+:root{--bg:#fbf6e9;--card:#fffdf6;--ink:#17394a;--mut:#5d7d84;--acc:#2f86c9;--ok:#3da56b;--warn:#f2b84b;--bad:#e2655a;--road:#c9dfc8;--line:#efe5c9;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:linear-gradient(180deg,#fbf6e9 0%,#eef7ee 100%) fixed,var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+main{max-width:560px;margin:0 auto;padding:14px 16px 40px}
+header{display:flex;align-items:center;justify-content:space-between;padding:6px 0 12px}
+h1{font:800 1.6rem "Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;margin:0}h1 span{color:var(--ok)}
+.sub{color:var(--mut);font-size:.85rem}
+.ib{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:6px 11px;font:inherit;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 4px 14px rgba(47,134,201,.08)}
+.btn{display:block;width:100%;background:var(--acc);color:#fff;border:0;border-radius:12px;padding:14px;font:700 1rem inherit;cursor:pointer}
+.btn.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.bar{height:8px;background:var(--line);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--ok));transition:width .4s}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dirs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.dir{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:12px 4px;min-height:84px;font:inherit;color:var(--ink);cursor:pointer;transition:transform .12s}
+.dir:hover:not(:disabled){border-color:var(--acc);transform:translateY(-2px)}
+.dir b{display:block;font-size:1.7rem;line-height:1.1}.dir small{display:block;font-size:.78rem;color:var(--mut)}
+.dir:disabled{opacity:.3;cursor:not-allowed}
+.clue{border-left:4px solid var(--line);padding:6px 12px;margin:8px 0;color:var(--mut)}
+.clue.hl{border-color:var(--acc);color:var(--ink);background:rgba(47,134,201,.10);animation:pulse 1s 2}
+@keyframes pulse{50%{background:rgba(61,165,107,.28)}}
+.msg{min-height:1.5em;font-weight:600}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.hintbox{background:rgba(242,184,75,.22);border-radius:10px;padding:8px 12px;margin-top:6px;font-size:.92rem}
+.big{font:800 3.4rem "Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;text-align:center;color:var(--acc);line-height:1}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.grid b{display:block;font:700 1.5rem "Avenir Next","Trebuchet MS","Segoe UI",system-ui,sans-serif;color:var(--acc)}
+.sq{text-align:center;margin:10px 0}.dot{display:inline-block;width:22px;height:22px;border-radius:50%;margin:0 3px}.dot.g{background:var(--ok)}.dot.y{background:var(--warn)}.dot.r{background:var(--bad)}
+.badge{display:inline-block;background:rgba(47,158,68,.15);color:var(--ok);border-radius:99px;padding:3px 10px;margin:3px;font-size:.85rem;font-weight:600}
+svg{width:100%;height:auto;display:block}svg text{fill:var(--ink);font:600 12px system-ui,sans-serif}
+.pop{animation:pop .4s}@keyframes pop{40%{transform:scale(1.03)}}
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;max-width:460px;width:92%}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><main>
+<header><div><h1>Direction<span>ate</span></h1><div class="sub" id="meta"></div></div>
+<div><button class="ib" id="bStats" aria-label="Statistics">Stats</button> <button class="ib" id="bHelp" aria-label="How to play">?</button></div></header>
+
+<section id="start"><div class="card">
+<p style="margin-top:0"><b>Can you find your way there?</b> Each day brings one route through a small town. At every junction, read the clues and pick a direction.</p>
+<p class="sub">Route: <b id="rname"></b><br>Difficulty: <b id="rdiff"></b> · 8 decisions · about 3 minutes<br>Next challenge in <b id="cd"></b></p>
+<button class="btn" id="go">Start today’s route</button></div></section>
+
+<section id="game" hidden>
+<div class="card"><div class="row"><b id="prog"></b><span class="sub" id="live"></span></div><div class="bar" style="margin-top:8px"><i id="barfill"></i></div></div>
+<div class="card" id="scene"><div class="sub" id="where"></div><div id="map"></div>
+<div class="clue" id="clue"></div><div id="hintbox"></div><div class="msg" id="msg" role="status" aria-live="polite"></div>
+<div class="dirs" id="dirs"></div>
+<button class="btn alt" id="hint">Hint</button><div class="sub" style="text-align:center;margin-top:6px">Keys: ← ↑ → to move · H for a hint</div></div>
+</section>
+
+<section id="end" hidden><div class="card"><div class="sub" style="text-align:center" id="etitle"></div><div class="big" id="escore"></div><div class="sub" style="text-align:center">out of 1000</div>
+<div class="sq" id="esq"></div><div class="grid" id="ebreak"></div><div style="text-align:center;margin-top:10px" id="ebadges"></div></div>
+<button class="btn" id="share">Copy result</button><p class="sub" style="text-align:center">Next challenge in <b id="cd2"></b></p></section>
+
+<dialog id="dHelp"><h2 style="margin-top:0">How to play</h2>
+<p>Read the street signs and clues, then choose Left, Straight or Right. Use the compass heading to work out which way is which.</p>
+<p><b>Scoring</b> (max 1000): +100 per correct turn, +25 bonus if you needed no mistakes or hints there, −50 per wrong turn, hints cost −10 / −25 / −50 (levels 1 to 3). Speed does not affect your score.</p>
+<p><b>Wrong turn?</b> You’re sent back to the junction and that road is closed off. You never restart.</p>
+<p class="sub">The town is fictional (“Maple Hollow”). It is a schematic practice map, not a real place.</p>
+<button class="btn" onclick="this.closest('dialog').close()">Got it</button></dialog>
+<dialog id="dStats"><h2 style="margin-top:0">Your stats</h2><div class="grid" id="sgrid"></div><br><button class="btn" onclick="this.closest('dialog').close()">Close</button></dialog>
+
+<script>
+const START="2026-10-29", DIRS=["N","E","S","W"], FULL={N:"north",E:"east",S:"south",W:"west"};
+const ROUTES=[{name:"Station to Library, Maple Hollow",diff:"Easy–Medium",start:"N",
+ steps:[
+ {on:"Station Rd",o:{L:"Elm St",S:"Station Rd",R:"Harbor Ave"},c:"R",clue:"A blue sign on the corner reads: “Library ➜ Harbor Ave”.",h:["Look at the blue sign on the corner.","Elm St and Station Rd are not on the sign.","The sign points to your right."]},
+ {on:"Harbor Ave",o:{L:"Mill Ln",R:"Cedar St"},c:"L",clue:"The Library sits north of the harbor. A sign says Cedar St leads to the docks.",h:["Which of these roads goes toward the docks?","You are heading east. Cedar St goes south.","Library is north: turn left."]},
+ {on:"Mill Ln",o:{L:"Birch St",S:"Mill Ln",R:"Pine St"},c:"S",clue:"Sign: “Library 600 m, Mill Ln.” Pine St: Industrial Park. Birch St: Housing.",h:["Read the distance sign.","Neither side street is signed for the Library.","Keep going straight."]},
+ {on:"Mill Ln",o:{L:"Willow Way",S:"Mill Ln",R:"Oak St"},c:"R",clue:"Signs: Willow Way ➜ Hospital. Oak St ➜ Library Square, 200 m. Mill Ln ➜ Ring Road.",h:["Compare each sign’s destination.","Hospital and Ring Road are not your goal.","Oak St is on your right."]},
+ {on:"Oak St",o:{L:"Grove St",S:"Oak St",R:"Park Rd"},c:"S",clue:"The clock tower is straight ahead. The Library faces the clock tower. Park Rd leads to the cemetery.",h:["Where is the clock tower?","Park Rd goes away from the tower.","Continue straight toward the tower."]},
+ {on:"Oak St",o:{L:"Clock Tower Rd",R:"Bridge Rd"},c:"L",clue:"A fork. Bridge Rd crosses the river and leaves town. The Library is on this side of the river.",h:["One road crosses the river.","You stay on this side of the river, so not Bridge Rd.","Take the left fork."]},
+ {on:"Clock Tower Rd",o:{L:"Orchard Ln",S:"Clock Tower Rd",R:"Market St"},c:"L",clue:"Traffic light. The Library is west of the clock tower, which is just ahead. Orchard Ln runs west, Market St runs east.",h:["Work out which compass direction you need.","You face north. West is on your left.","Orchard Ln, on your left."]},
+ {on:"Orchard Ln",o:{L:"Almond Ct",S:"Orchard Ln",R:"Library Sq"},c:"R",clue:"Library Square is north of Orchard Ln. A sign says Almond Ct is a dead end to the south.",h:["Note the dead-end sign.","You face west. North is on your right.","Library Sq, on your right."]}]}];
+const $=id=>document.getElementById(id), TURN={L:-1,S:0,R:1}, ARROW={L:"←",S:"↑",R:"→"}, LAB={L:"Left",S:"Straight",R:"Right"};
+const HCOST=[10,25,50];
+function dayNo(d=new Date()){return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(...START.split("-").map((v,i)=>i==1?v-1:+v)))/864e5)+1}
+const DAY=Math.max(1,dayNo()), R=ROUTES[(DAY-1)%ROUTES.length];
+let heads=[],h=DIRS.indexOf(R.start);R.steps.forEach(s=>{heads.push(DIRS[h]);h=(h+TURN[s.c]+4)%4});
+const ls={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let S=ls.get("dir_game_"+DAY,null)||{i:0,tried:[],lvl:0,m:0,log:[],t:0,done:false,started:false}, tick=null;
+const save=()=>ls.set("dir_game_"+DAY,S);
+function score(log){let s=0;log.forEach(e=>{let hp=0;for(let k=0;k<e.h;k++)hp+=HCOST[k];s+=100+(e.m==0&&e.h==0?25:0)-50*e.m-hp});return Math.max(0,s)}
+function show(id){["start","game","end"].forEach(x=>$(x).hidden=x!=id)}
+function fmt(t){return Math.floor(t/60)+":"+String(t%60).padStart(2,"0")}
+function cdText(){const n=new Date(),m=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1),s=Math.floor((m-n)/1e3);return [Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(v=>String(v).padStart(2,"0")).join(":")}
+function render(){
+ const st=R.steps[S.i];$("prog").textContent="Junction "+(S.i+1)+" of "+R.steps.length;$("barfill").style.width=S.i/R.steps.length*100+"%";
+ $("live").textContent="Mistakes "+S.m+" · Time "+fmt(S.t);
+ $("where").innerHTML="You’re on <b>"+st.on+"</b>, heading <b>"+FULL[heads[S.i]]+"</b>. Goal: Library Square.";
+ const open=k=>st.o[k]&&!S.tried.includes(k)&&S.elim!==k, hl=S.lvl>=3;
+ let svg='<svg viewBox="0 0 300 230" role="img" aria-label="Junction diagram"><g stroke-linecap="round" stroke-width="24" fill="none">';
+ const arms={S:[150,120,150,22,150,16,"middle"],L:[150,120,24,120,14,106,"start"],R:[150,120,276,120,286,106,"end"]};
+ svg+='<path d="M150 225V120" stroke="var(--road)"/>';
+ for(const k in st.o){const a=arms[k],col=S.tried.includes(k)?"var(--bad)":(hl&&k===st.c?"var(--acc)":"var(--road)"),dash=S.elim===k?' stroke-dasharray="2 14" opacity=".5"':"";svg+='<path d="M'+a[0]+" "+a[1]+"L"+a[2]+" "+a[3]+'" stroke="'+col+'"'+dash+"/>"}
+ svg+='</g><g transform="translate(150 196)"><rect x="-11" y="-11" width="4" height="8" rx="2" fill="var(--ink)"/><rect x="7" y="-11" width="4" height="8" rx="2" fill="var(--ink)"/><rect x="-11" y="5" width="4" height="8" rx="2" fill="var(--ink)"/><rect x="7" y="5" width="4" height="8" rx="2" fill="var(--ink)"/><rect x="-8" y="-16" width="16" height="32" rx="7" fill="var(--acc)"/><rect x="-5.5" y="-8" width="11" height="6" rx="2" fill="#fffdf6"/><rect x="-5.5" y="6" width="11" height="4" rx="2" fill="#fffdf6" opacity=".7"/></g>';
+ for(const k in st.o){const a=arms[k];svg+='<text x="'+a[4]+'" y="'+(k=="S"?a[5]+2:a[5]-2)+'" text-anchor="'+a[6]+'">'+st.o[k]+"</text>"}
+ $("map").innerHTML=svg+"</svg>";
+ $("clue").textContent=st.clue;$("clue").className="clue"+(S.lvl>=1?" hl":"");
+ $("hintbox").innerHTML=S.lvl?'<div class="hintbox">'+st.h.slice(0,S.lvl).map((t,i)=>"Hint "+(i+1)+": "+t).join("<br>")+"</div>":"";
+ $("dirs").innerHTML=["L","S","R"].map(k=>'<button class="dir" data-k="'+k+'"'+(open(k)?"":" disabled")+(st.o[k]?"":' style="visibility:hidden"')+"><b>"+ARROW[k]+"</b>"+LAB[k]+"<small>"+(st.o[k]||"")+"</small></button>").join("");
+ $("hint").disabled=S.lvl>=3;$("hint").textContent=S.lvl>=3?"No more hints":"Hint "+(S.lvl+1)+" (−"+HCOST[S.lvl]+")";
+}
+function choose(k){if(S.done)return;const st=R.steps[S.i];if(!st.o[k]||S.tried.includes(k)||S.elim===k)return;
+ if(k===st.c){S.log.push({m:S.tried.length,h:S.lvl});S.i++;S.tried=[];S.lvl=0;S.elim=null;
+  if(S.i>=R.steps.length){finish();return}
+  render();$("msg").textContent="Correct. On you go.";$("msg").className="msg ok";$("scene").classList.remove("pop");void $("scene").offsetWidth;$("scene").classList.add("pop")}
+ else{S.tried.push(k);S.m++;render();$("msg").textContent="Dead end on "+st.o[k]+". You U-turn back to the junction (−50). That road is now closed.";$("msg").className="msg bad"}
+ save()}
+function hint(){if(S.lvl>=3)return;const st=R.steps[S.i];S.lvl++;
+ if(S.lvl===2){const w=Object.keys(st.o).filter(k=>k!==st.c&&!S.tried.includes(k));S.elim=w[0]||null}
+ render();save()}
+function stats(){const p=ls.get("dir_stats",{});const days=Object.keys(p).map(Number).sort((a,b)=>a-b);
+ let best=0,run=0,prev=-9;days.forEach(d=>{run=d===prev+1?run+1:1;prev=d;best=Math.max(best,run)});
+ let cur=0,d=p[DAY]?DAY:DAY-1;while(p[d]){cur++;d--}
+ const v=days.map(x=>p[x]);return{cur,best,n:days.length,avg:v.length?Math.round(v.reduce((a,b)=>a+b.s,0)/v.length):0,perfect:v.filter(x=>x.m==0).length,pb:v.length?Math.max(...v.map(x=>x.s)):0}}
+function finish(){S.done=true;clearInterval(tick);const sc=score(S.log),hints=S.log.reduce((a,e)=>a+e.h,0);
+ const p=ls.get("dir_stats",{});if(!p[DAY])p[DAY]={s:sc,m:S.m,h:hints,t:S.t};ls.set("dir_stats",p);save();showEnd()}
+function showEnd(){show("end");const sc=score(S.log),hints=S.log.reduce((a,e)=>a+e.h,0),st=stats();
+ $("etitle").textContent="Directionate #"+DAY+" complete";$("escore").textContent=sc;
+ $("esq").innerHTML=S.log.map(e=>"<span class='dot "+(e.m?"r":e.h?"y":"g")+"'></span>").join("");
+ const c=(n,l)=>"<div><b>"+n+"</b><span class='sub'>"+l+"</span></div>";
+ $("ebreak").innerHTML=c(S.log.length+"/"+R.steps.length,"correct")+c(S.m,"mistakes")+c(hints,"hints")+c(fmt(S.t),"time")+c(st.cur,"streak")+c(st.best,"best streak");
+ const b=[];if(S.m==0)b.push("Perfect Navigator");if(hints==0)b.push("No Looking Back");if(st.cur>=3)b.push("Streak Keeper");
+ $("ebadges").innerHTML=b.map(x=>"<span class='badge'>"+x+"</span>").join("")}
+function shareText(){return "Directionate #"+DAY+" - "+score(S.log)+"/1000\n"+S.log.map(e=>e.m?"○":e.h?"◐":"●").join("")+"\nTime "+fmt(S.t)+" · "+S.m+" wrong turns"}
+function showStats(){const s=stats(),c=(n,l)=>"<div><b>"+n+"</b><span class='sub'>"+l+"</span></div>";
+ $("sgrid").innerHTML=c(s.cur,"streak")+c(s.best,"best streak")+c(s.n,"completed")+c(s.avg,"avg score")+c(s.perfect,"perfect")+c(s.pb,"personal best");$("dStats").showModal()}
+function begin(){S.started=true;save();show("game");render();clearInterval(tick);tick=setInterval(()=>{S.t++;$("live").textContent="Mistakes "+S.m+" · Time "+fmt(S.t);if(S.t%5==0)save()},1000)}
+$("meta").textContent="Daily #"+DAY+" · "+new Date().toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+$("rname").textContent=R.name;$("rdiff").textContent=R.diff;
+$("go").onclick=begin;$("hint").onclick=hint;$("bHelp").onclick=()=>$("dHelp").showModal();$("bStats").onclick=showStats;
+$("dirs").onclick=e=>{const b=e.target.closest(".dir");if(b)choose(b.dataset.k)};
+$("share").onclick=async()=>{const t=shareText();try{await navigator.clipboard.writeText(t);$("share").textContent="Copied"}catch(e){prompt("Copy your result:",t)}setTimeout(()=>$("share").textContent="Copy result",2000)};
+document.addEventListener("keydown",e=>{if($("game").hidden)return;const m={ArrowLeft:"L",ArrowUp:"S",ArrowRight:"R"};if(m[e.key]){e.preventDefault();choose(m[e.key])}else if(e.key.toLowerCase()=="h")hint()});
+setInterval(()=>{$("cd").textContent=$("cd2").textContent=cdText()},1000);$("cd").textContent=$("cd2").textContent=cdText();
+if(S.done)showEnd();else if(S.started){$("go").textContent="Resume today’s route"}
+</script></main></body></html>
